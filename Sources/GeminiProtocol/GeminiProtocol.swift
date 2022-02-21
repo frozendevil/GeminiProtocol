@@ -45,14 +45,19 @@ public class GeminiProtocol: URLProtocol {
             }
             
             do {
-                let (header, data) = try await connection.start()
+                let (header, maybeData) = try await connection.start()
                 
-                let response = GeminiURLResponse(url: request.url!, expectedContentLength: data?.count ?? 0, statusCode: header.status, meta: header.meta)
+                let url = request.url!
+                let data = maybeData ?? Data()
+                let response = GeminiURLResponse(
+                    url: url,
+                    expectedContentLength: data.count,
+                    statusCode: header.status,
+                    meta: header.meta
+                )
+                
                 client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-                
-                if let data = data {
-                    client.urlProtocol(self, didLoad: data)
-                }
+                client.urlProtocol(self, didLoad: data)
                 client.urlProtocolDidFinishLoading(self)
             } catch {
                 await connection.stop()

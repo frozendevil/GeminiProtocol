@@ -6,9 +6,15 @@
 
 import Network
 
-public struct GeminiResponseHeader: Sendable {
+public struct GeminiResponseHeader: Equatable, Sendable {
     let status: GeminiStatusCode
     let meta: String
+}
+
+extension String {
+    public init(geminiResponseHeader: GeminiResponseHeader) {
+        self.init("\(geminiResponseHeader.status.rawValue) \(geminiResponseHeader.meta)\r\n")
+    }
 }
 
 extension NWProtocolFramer.Message {

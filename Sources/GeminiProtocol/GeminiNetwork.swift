@@ -11,9 +11,13 @@ import os.log
 public actor GeminiClient {
     private let connection: NWConnection
     private let request: GeminiRequest
-    private let queue = DispatchQueue(label: "gemini client queue")
+    private let queue = DispatchQueue(label: "com.geminiprotocol.gemini-client")
     
-    init(request: URLRequest) throws {
+    public convenience init(request: URLRequest) throws {
+        try self.init(request: request, debug: false)
+    }
+    
+    internal init(request: URLRequest, debug: Bool = false) throws {
         guard let url = request.url else { throw GeminiClientError.initializationError("No URL specified") }
         self.request = GeminiRequest(url: url)
         
@@ -23,12 +27,11 @@ public actor GeminiClient {
         let urlPort = request.url?.port.map(UInt16.init) ?? 1965
         guard let port = NWEndpoint.Port(rawValue: urlPort) else { throw GeminiClientError.initializationError("Invalid port") }
         
-        self.connection = NWConnection(host: host, port: port, using: .gemini(queue))
+        let parameters = NWParameters.gemini(queue, debug: debug)
+        self.connection = NWConnection(host: host, port: port, using: parameters)
     }
     
-    public func start() async throws -> (GeminiResponseHeader, Data?) {
-        print("connection will start")
-        
+    public func start() async throws -> (GeminiResponseHeader, Data?) {        
         return try await withCheckedThrowingContinuation { continuation in
             connection.stateUpdateHandler = { [weak self] state in
                 guard let self = self else {
@@ -48,12 +51,11 @@ public actor GeminiClient {
                         content: nil,
                         contentContext: context,
                         isComplete: true,
-                        completion: .contentProcessed( { error in
+                        completion: .contentProcessed { error in
                             if let error = error {
-                                continuation.resume(throwing: error)
-                                return
+                                print(error)
                             }
-                        })
+                        }
                     )
                 case .failed(let error):
                     continuation.resume(throwing: error)
@@ -156,17 +158,22 @@ class GeminiFramer: NWProtocolFramerImplementation {
 }
 
 extension NWParameters {
-    static func gemini(_ queue: DispatchQueue) -> NWParameters {
-        let tlsOptions = NWProtocolTLS.Options()
-        sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
-        sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { (sec_protocol_metadata, sec_trust, sec_protocol_verify_complete) in
-            // TODO: Actually handle TLS the way the spec says to. See section #4 of https://gemini.circumlunar.space/docs/specification.gmi
-            sec_protocol_verify_complete(true)
-        }, queue)
-        
-        let tcpOptions = NWProtocolTCP.Options()
-        
-        let parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+    static func gemini(_ queue: DispatchQueue, debug: Bool = false) -> NWParameters {
+        let parameters: NWParameters
+        if debug {
+            parameters = .tcp
+        } else {
+            let tlsOptions = NWProtocolTLS.Options()
+            sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
+            sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { (sec_protocol_metadata, sec_trust, sec_protocol_verify_complete) in
+                // TODO: Actually handle TLS the way the spec says to. See section #4 of https://gemini.circumlunar.space/docs/specification.gmi
+                sec_protocol_verify_complete(true)
+            }, queue)
+            
+            let tcpOptions = NWProtocolTCP.Options()
+            
+            parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+        }
         
         let options = NWProtocolFramer.Options(definition: GeminiFramer.definition)
         parameters.defaultProtocolStack.applicationProtocols.insert(options, at: 0)
