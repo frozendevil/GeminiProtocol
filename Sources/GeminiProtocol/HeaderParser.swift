@@ -144,13 +144,14 @@ class MetaParser: Parser {
             return 0
         }
         
-        guard let string = String(bytes: buffer[..<nextToLastIndex], encoding: .utf8) else {
+        let data = buffer[..<nextToLastIndex]
+        guard let string = String(bytes: data, encoding: .utf8) else {
             state = .failed
             return 0
         }
         
         state = .succeeded(string)
-        return expectedRemainingLength
+        return data.count
     }
 }
 
