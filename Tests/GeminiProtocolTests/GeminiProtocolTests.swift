@@ -18,6 +18,8 @@ enum GeminiBodies {
         This is a response body
         
         ## Title 2
+        
+        
         """
 }
 
@@ -31,9 +33,9 @@ final class GeminiProtocolTests: XCTestCase {
     func testRequest() async throws {
         await server.start(header: GeminiHeaders.successWithGeminiContent, body: GeminiBodies.genericBody)
 
-//        let url = URL(string: "gemini://localhost:1965")!
-        let url = URL(string: "gemini://geddit.glv.one")!
-        let client = try GeminiClient(request: URLRequest(url: url), debug: false)
+        let url = URL(string: "gemini://localhost:1965")!
+//        let url = URL(string: "gemini://geddit.glv.one")!
+        let client = try GeminiClient(request: URLRequest(url: url), debug: true)
         let (header, maybeData) = try await client.start()
         
         XCTAssertEqual(header, GeminiHeaders.successWithGeminiContent)
