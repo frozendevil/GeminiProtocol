@@ -34,7 +34,7 @@ actor GeminiTestServer {
         self.body = body
         
         listener.newConnectionHandler = handle(connection:)
-        listener.start(queue: .main)
+        listener.start(queue: queue)
     }
     
     func stop() {
