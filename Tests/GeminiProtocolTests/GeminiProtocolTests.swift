@@ -4,7 +4,7 @@
 // Copyright © 2022 Izzy Fraimow. All rights reserved.
 //
 
-@_predatesConcurrency import XCTest
+import XCTest
 @testable import GeminiProtocol
 
 enum GeminiHeaders {
@@ -26,6 +26,10 @@ enum GeminiBodies {
 final class GeminiProtocolTests: XCTestCase {
     let server = GeminiTestServer()
     
+    override class func setUp() {
+        setenv("CFNETWORK_DIAGNOSTICS", "3", 1)
+    }
+
     override func setUp() async throws {
         URLProtocol.registerClass(GeminiProtocol.self)
     }
@@ -34,7 +38,7 @@ final class GeminiProtocolTests: XCTestCase {
         await server.start(header: GeminiHeaders.successWithGeminiContent, body: GeminiBodies.genericBody)
 
         let url = URL(string: "gemini://localhost:1965")!
-//        let url = URL(string: "gemini://geddit.glv.one")!
+//        let url = URL(string: "gemini://gemini.circumlunar.space/")!
         let client = try GeminiClient(request: URLRequest(url: url), debug: true)
         let (header, maybeData) = try await client.start()
         
