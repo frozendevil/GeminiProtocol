@@ -4,7 +4,7 @@
 // Copyright © 2022 Izzy Fraimow. All rights reserved.
 //
 
-@_predatesConcurrency import Foundation
+import Foundation
 import Network
 
 public struct GeminiRequest: Sendable {

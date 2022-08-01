@@ -4,7 +4,7 @@
 // Copyright © 2022 Izzy Fraimow. All rights reserved.
 //
 
-@_predatesConcurrency import Foundation
+import Foundation
 import Network
 import os.log
 
@@ -29,6 +29,11 @@ public class GeminiProtocol: URLProtocol {
         Self.logger.debug("Accepted request: \(request)")
         
         return true
+    }
+    
+    public override class func canInit(with task: URLSessionTask) -> Bool {
+        guard let request = task.currentRequest else { return false }
+        return canInit(with: request)
     }
     
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest {

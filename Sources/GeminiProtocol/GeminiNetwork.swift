@@ -4,8 +4,8 @@
 // Copyright © 2022 Izzy Fraimow. All rights reserved.
 //
 
-@_predatesConcurrency import Foundation
-@_predatesConcurrency import Network
+import Foundation
+import Network
 import os.log
 
 public actor GeminiClient {
@@ -13,7 +13,7 @@ public actor GeminiClient {
     private let request: GeminiRequest
     private let queue = DispatchQueue(label: "com.geminiprotocol.gemini-client")
     
-    public convenience init(request: URLRequest) throws {
+    public init(request: URLRequest) throws {
         try self.init(request: request, debug: false)
     }
     

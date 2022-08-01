@@ -5,14 +5,12 @@
 // Copyright © 2022 Izzy Fraimow. All rights reserved.
 //
 
-@_predatesConcurrency import Foundation
-@_predatesConcurrency import Network
+import Foundation
+import Network
 import GeminiProtocol
 
-/// A server for use in automated testing which accepts a connection,
-/// automatically replies with the value provided in `responseBlock`,
-/// and then stops itself.
-actor GeminiTestServer {
+/// A server for use in automated testing
+public actor GeminiTestServer {
     
     let port: NWEndpoint.Port
     
@@ -47,7 +45,8 @@ actor GeminiTestServer {
     
     private func handle(connection newConnection: NWConnection) {
         guard connection == nil else {
-            fatalError("`TestServer` does not support simultaneous connections")
+            return
+//            fatalError("`TestServer` does not support simultaneous connections")
         }
         
         connection = newConnection
@@ -60,6 +59,7 @@ actor GeminiTestServer {
             
             let bodyData = body.data(using: .utf8)!
             await send(bodyData)
+//            connection?.cancel()
         }
     }
     
