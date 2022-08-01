@@ -116,7 +116,7 @@ class SpaceParser: Parser {
 class MetaParser: Parser {
     private(set) var expectedRemainingLength = 2
     private(set) var state = ParserState<String>.ready
-    private(set) var maximumLength = Int.max
+    private(set) var maximumLength = 1024
     
     private let endLength = 2 // <CR><LF>
     
@@ -128,30 +128,38 @@ class MetaParser: Parser {
             return 0
         }
         
-        guard let lastChar = buffer.last, lastChar == ASCII.newline else {
+        var startIndex = buffer.startIndex
+        var crFound = false
+        while let crIndex = buffer[startIndex...].firstIndex(of: ASCII.carriageReturn) {
+            crFound = true
+            
+            let nextIndex = buffer.index(after: crIndex)
+            guard nextIndex <= buffer.endIndex else { break }
+            
+            if buffer[nextIndex] == ASCII.newline {
+                let data = buffer[..<startIndex]
+                guard let string = String(bytes: data, encoding: .utf8) else {
+                    state = .failed
+                    return 0
+                }
+                
+                state = .succeeded(string)
+                return data.count
+            }
+            
+            startIndex = nextIndex
+        }
+        
+        if crFound {
             // Buffer does not end in <LF>, try to get more bytes
             expectedRemainingLength = buffer.count + 1
-            state = .failed
-            return 0
-        }
-        
-        let nextToLastIndex = buffer.index(before: buffer.count - 1)
-        let nextToLastChar = buffer[nextToLastIndex]
-        guard nextToLastChar == ASCII.carriageReturn else {
+        } else {
             // Buffer does not end in <CR><LF>, try to get more bytes
             expectedRemainingLength = buffer.count + 2
-            state = .failed
-            return 0
         }
         
-        let data = buffer[..<nextToLastIndex]
-        guard let string = String(bytes: data, encoding: .utf8) else {
-            state = .failed
-            return 0
-        }
-        
-        state = .succeeded(string)
-        return data.count
+        state = .failed
+        return 0
     }
 }
 
